@@ -48,6 +48,11 @@ class Value:
         
     def __neg__(self):
         out = Value(-self.data, (self, ), '-')
+
+        def _backward():
+            self.grad += -out.grad
+
+        out._backward = _backward
         return out
 
     def backward(self):
