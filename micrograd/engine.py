@@ -27,6 +27,27 @@ class Value:
         out._backward = _backward
         return out
 
+    def __sub__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
+        return self + (-other)
+
+    def __truediv__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
+        if other.data == 0:
+            raise ZeroDivisionError("Value 的除数不能为 0")
+
+        out = Value(self.data / other.data, (self, other), '/')
+
+        def _backward():
+            self.grad += out.grad / other.data
+            other.grad += out.grad * (-self.data / other.data **2)
+        out._backward = _backward
+        return out
+
+    def __rtruediv__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
+        return other / self
+
     def __mul__(self, other):
         out = Value(self.data * other.data, (self, other), '*')
 
@@ -35,6 +56,13 @@ class Value:
             other.grad += out.grad * self.data
         out._backward = _backward    
         return out 
+
+    def __pow__(self, n):
+        out = Value(self.data ** n, (self, ), f'(**{n})')
+        def _backward():
+            self.grad += out.grad * n * self.data ** (n - 1)
+        out._backward = _backward
+        return out
 
     def tanh(self):
         t = math.tanh(self.data)
