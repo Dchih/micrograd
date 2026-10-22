@@ -19,6 +19,7 @@ class Value:
         return f"Value(data={self.data})"
 
     def __add__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data + other.data, (self, other), '+')
         
         def _backward():
@@ -26,6 +27,9 @@ class Value:
             other.grad += out.grad * 1.0
         out._backward = _backward
         return out
+
+    def __radd__(self, other):
+        return self + other
 
     def __sub__(self, other):
         other = other if isinstance(other, Value) else Value(other)
@@ -49,6 +53,7 @@ class Value:
         return other / self
 
     def __mul__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data * other.data, (self, other), '*')
 
         def _backward():
@@ -56,6 +61,9 @@ class Value:
             other.grad += out.grad * self.data
         out._backward = _backward    
         return out 
+
+    def __rmul__(self, other):
+        return self * other
 
     def __pow__(self, n):
         out = Value(self.data ** n, (self, ), f'(**{n})')
@@ -70,6 +78,16 @@ class Value:
         
         def _backward():
             self.grad += (1 - t**2)*out.grad
+
+        out._backward = _backward
+        return out
+
+    def relu(self):
+        t = self.data if self.data > 0 else 0
+        out = Value(t, (self,), 'relu')
+
+        def _backward():
+            self.grad += out.grad * (1 if self.data > 0 else 0)
 
         out._backward = _backward
         return out
